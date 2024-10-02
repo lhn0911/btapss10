@@ -1,85 +1,185 @@
 <template>
-  <div class="w-[80%] m-auto mt-4 h-[100vh]">
-    <header class="d-flex justify-content-between mb-3">
-      <h3>Nhân viên</h3>
-      <button class="btn btn-primary" @click="openAddEmployeeForm">
-        Thêm nhân viên
-      </button>
-    </header>
-
-    <input
-      type="text"
-      class="form-control mb-3"
-      v-model="searchEmail"
-      placeholder="Tìm kiếm theo email"
-    />
-
-    <!-- Danh sách nhân viên -->
-    <table class="table table-bordered">
-      <thead>
-        <tr>
-          <th>STT</th>
-          <th>Họ và tên</th>
-          <th>Email</th>
-          <th>Trạng thái</th>
-          <th>Chức năng</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr
-          v-for="(employee, index) in filteredEmployees"
-          :key="employee.email"
-        >
-          <td>{{ index + 1 }}</td>
-          <td>{{ employee.name }}</td>
-          <td>{{ employee.email }}</td>
-          <td>
-            {{
-              employee.status === "active"
-                ? "Đang hoạt động"
-                : "Ngừng hoạt động"
-            }}
-          </td>
-          <td>
-            <button @click="toggleBlock(employee)" class="btn btn-secondary">
-              {{ employee.status === "active" ? "Chặn" : "Bỏ chặn" }}
-            </button>
-            <button @click="editEmployee(employee)" class="btn btn-warning">
-              Sửa
-            </button>
-            <button @click="confirmDelete(employee)" class="btn btn-danger">
-              Xóa
-            </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+  <div>
+    <div class="w-[80%] m-auto mt-4 h-[100vh]">
+      <main class="main">
+        <header class="d-flex justify-content-between mb-3">
+          <h3>Nhân viên</h3>
+          <button class="btn btn-primary" @click="openAddEmployeeForm">
+            Thêm mới nhân viên
+          </button>
+        </header>
+        <div class="d-flex align-items-center justify-content-end gap-2 mb-3">
+          <input
+            style="width: 350px"
+            type="text"
+            class="form-control"
+            v-model="searchEmail"
+            placeholder="Tìm kiếm theo email"
+          />
+          <i
+            class="fa-solid fa-arrows-rotate"
+            title="Refresh"
+            @click="refresh"
+          ></i>
+        </div>
+        <!-- Danh sách nhân viên -->
+        <table class="table table-bordered table-hover table-striped">
+          <thead>
+            <tr>
+              <th>STT</th>
+              <th>Họ và tên</th>
+              <th>Ngày sinh</th>
+              <th>Email</th>
+              <th>Địa chỉ</th>
+              <th>Trạng thái</th>
+              <th colspan="3">Chức năng</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="(employee, index) in filteredEmployees"
+              :key="employee.email"
+            >
+              <td>{{ index + 1 }}</td>
+              <td>{{ employee.name }}</td>
+              <td>{{ employee.dob }}</td>
+              <td>{{ employee.email }}</td>
+              <td>{{ employee.address }}</td>
+              <td>
+                <div style="display: flex; align-items: center; gap: 8px">
+                  <div
+                    :class="
+                      employee.status === 'active'
+                        ? 'status status-active'
+                        : 'status status-stop'
+                    "
+                  ></div>
+                  <span>{{
+                    employee.status === "active"
+                      ? "Đang hoạt động"
+                      : "Ngừng hoạt động"
+                  }}</span>
+                </div>
+              </td>
+              <td>
+                <button
+                  @click="toggleBlock(employee)"
+                  class="button button-block"
+                >
+                  {{ employee.status === "active" ? "Chặn" : "Bỏ chặn" }}
+                </button>
+              </td>
+              <td>
+                <button
+                  @click="editEmployee(employee)"
+                  class="button button-edit"
+                >
+                  Sửa
+                </button>
+              </td>
+              <td>
+                <button
+                  @click="confirmDelete(employee)"
+                  class="button button-delete"
+                >
+                  Xóa
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <!-- Pagination and footer -->
+        <footer class="d-flex justify-content-end align-items-center gap-3">
+          <select class="form-select" v-model="itemsPerPage">
+            <option value="10">Hiển thị 10 bản ghi trên trang</option>
+            <option value="20">Hiển thị 20 bản ghi trên trang</option>
+            <option value="50">Hiển thị 50 bản ghi trên trang</option>
+            <option value="100">Hiển thị 100 bản ghi trên trang</option>
+          </select>
+          <ul class="pagination">
+            <li class="page-item">
+              <a class="page-link" href="#" @click="prevPage">Previous</a>
+            </li>
+            <li v-for="page in totalPages" :key="page" class="page-item">
+              <a class="page-link" href="#" @click="setPage(page)">{{
+                page
+              }}</a>
+            </li>
+            <li class="page-item">
+              <a class="page-link" href="#" @click="nextPage">Next</a>
+            </li>
+          </ul>
+        </footer>
+      </main>
+    </div>
 
     <!-- Form thêm mới nhân viên -->
     <div v-if="showAddForm" class="overlay">
       <form class="form">
-        <h4>Thêm/Sửa nhân viên</h4>
-        <div>
-          <label>Họ và tên</label>
-          <input v-model="formData.name" type="text" class="form-control" />
+        <div class="d-flex justify-content-between align-items-center">
+          <h4>Chỉnh sửa nhân viên</h4>
+          <i class="fa-solid fa-xmark" @click="closeForm"></i>
         </div>
         <div>
-          <label>Email</label>
-          <input v-model="formData.email" type="email" class="form-control" />
+          <label class="form-label" for="userName">Họ và tên</label>
+          <input
+            id="userName"
+            v-model="formData.name"
+            type="text"
+            class="form-control"
+          />
         </div>
-        <button class="btn btn-primary mt-3 w-100" @click="addOrUpdateEmployee">
-          Lưu
-        </button>
+        <div>
+          <label class="form-label" for="dateOfBirth">Ngày sinh</label>
+          <input
+            id="dateOfBirth"
+            v-model="formData.dob"
+            type="date"
+            class="form-control"
+          />
+        </div>
+        <div>
+          <label class="form-label" for="email">Email</label>
+          <input
+            id="email"
+            v-model="formData.email"
+            type="email"
+            class="form-control"
+          />
+        </div>
+        <div>
+          <label class="form-label" for="address">Địa chỉ</label>
+          <textarea
+            class="form-control"
+            id="address"
+            v-model="formData.address"
+            rows="3"
+          ></textarea>
+        </div>
+        <div>
+          <button class="w-100 btn btn-primary" @click="addOrUpdateEmployee">
+            Lưu
+          </button>
+        </div>
       </form>
     </div>
 
-    <!-- Modal xác nhận xóa -->
+    <!-- Modal xác nhận xóa tài khoản -->
     <div v-if="showDeleteConfirm" class="overlay">
       <div class="modal-custom">
-        <h4>Cảnh báo</h4>
-        <p>Bạn có chắc chắn muốn xóa nhân viên này?</p>
-        <button class="btn btn-light" @click="closeConfirm">Hủy</button>
-        <button class="btn btn-danger" @click="deleteEmployee">Xóa</button>
+        <div class="modal-title">
+          <h4>Cảnh báo</h4>
+          <i class="fa-solid fa-xmark" @click="closeConfirm"></i>
+        </div>
+        <div class="modal-body-custom">
+          <span>Bạn có chắc chắn muốn xóa tài khoản này?</span>
+        </div>
+        <div class="modal-footer-custom">
+          <button class="btn btn-light" @click="closeConfirm">Hủy</button>
+          <button class="btn btn-danger" @click="deleteEmployee">
+            Xác nhận
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -89,22 +189,75 @@
 import { ref, computed } from "vue";
 
 const employees = ref([
-  { name: "Nguyễn Văn A", email: "nvana@gmail.com", status: "active" },
-  { name: "Trần Thị B", email: "ttb@gmail.com", status: "inactive" },
-  { name: "Lê Văn C", email: "lvc@gmail.com", status: "active" },
+  {
+    name: "Nguyễn Văn A",
+    dob: "28/02/1990",
+    email: "nvana@gmail.com",
+    address: "Ba Đình, Hà Nội",
+    status: "active",
+  },
+  {
+    name: "Trần Thị B",
+    dob: "15/07/1985",
+    email: "ttb@gmail.com",
+    address: "Cầu Giấy, Hà Nội",
+    status: "inactive",
+  },
+  {
+    name: "Lê Văn C",
+    dob: "03/10/2000",
+    email: "lvc@gmail.com",
+    address: "Hai Bà Trưng, Hà Nội",
+    status: "active",
+  },
+  {
+    name: "Phạm Thị D",
+    dob: "20/05/1995",
+    email: "ptd@gmail.com",
+    address: "Hoàn Kiếm, Hà Nội",
+    status: "inactive",
+  },
+  {
+    name: "Ngô Văn E",
+    dob: "12/11/1988",
+    email: "ngv@gmail.com",
+    address: "Cầu Giấy, Hà Nội",
+    status: "active",
+  },
 ]);
 
 const searchEmail = ref("");
 const showAddForm = ref(false);
 const showDeleteConfirm = ref(false);
 const currentEmployee = ref(null);
-const formData = ref({ name: "", email: "" });
+const formData = ref({ name: "", dob: "", email: "", address: "" });
+const itemsPerPage = ref(10);
+const currentPage = ref(1);
 
-const filteredEmployees = computed(() => {
-  return employees.value.filter((e) =>
+// Lọc nhân viên theo email
+const filteredEmployees = computed(() =>
+  employees.value.filter((e) =>
     e.email.toLowerCase().includes(searchEmail.value.toLowerCase())
-  );
-});
+  )
+);
+
+// Số trang
+const totalPages = computed(() =>
+  Math.ceil(filteredEmployees.value.length / itemsPerPage.value)
+);
+
+// Chuyển trang
+const setPage = (page) => {
+  currentPage.value = page;
+};
+
+const nextPage = () => {
+  if (currentPage.value < totalPages.value) currentPage.value++;
+};
+
+const prevPage = () => {
+  if (currentPage.value > 1) currentPage.value--;
+};
 
 const openAddEmployeeForm = () => {
   showAddForm.value = true;
@@ -112,13 +265,15 @@ const openAddEmployeeForm = () => {
 
 const closeForm = () => {
   showAddForm.value = false;
-  formData.value = { name: "", email: "" };
+  formData.value = { name: "", dob: "", email: "", address: "" };
 };
 
 const addOrUpdateEmployee = () => {
   if (currentEmployee.value) {
+    // Update employee
     Object.assign(currentEmployee.value, formData.value);
   } else {
+    // Add new employee
     employees.value.push({ ...formData.value, status: "active" });
   }
   closeForm();
@@ -149,30 +304,10 @@ const deleteEmployee = () => {
 const toggleBlock = (employee) => {
   employee.status = employee.status === "active" ? "inactive" : "active";
 };
+
+const refresh = () => {
+  searchEmail.value = "";
+};
 </script>
 
-<style>
-.overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.5);
-}
-
-.form,
-.modal-custom {
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
-}
-
-.form input,
-.form button {
-  margin-bottom: 10px;
-}
-</style>
+<style></style>
