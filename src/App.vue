@@ -234,19 +234,16 @@ const formData = ref({ name: "", dob: "", email: "", address: "" });
 const itemsPerPage = ref(10);
 const currentPage = ref(1);
 
-// Lọc nhân viên theo email
 const filteredEmployees = computed(() =>
   employees.value.filter((e) =>
     e.email.toLowerCase().includes(searchEmail.value.toLowerCase())
   )
 );
 
-// Số trang
 const totalPages = computed(() =>
   Math.ceil(filteredEmployees.value.length / itemsPerPage.value)
 );
 
-// Chuyển trang
 const setPage = (page) => {
   currentPage.value = page;
 };
@@ -270,10 +267,8 @@ const closeForm = () => {
 
 const addOrUpdateEmployee = () => {
   if (currentEmployee.value) {
-    // Update employee
     Object.assign(currentEmployee.value, formData.value);
   } else {
-    // Add new employee
     employees.value.push({ ...formData.value, status: "active" });
   }
   closeForm();
